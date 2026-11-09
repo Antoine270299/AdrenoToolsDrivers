@@ -8,6 +8,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   start_building_turnip:
     runs-on: ubuntu-24.04
@@ -27,34 +30,21 @@ jobs:
     - name: Execute build script
       run: bash ./turnip_builder.sh
 
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: turnip-linear-V${{ inputs.version }}
+        path: /tmp/mainline-turnip-linear-V${{ inputs.version }}.zip
+
     - name: Release "turnip"
       uses: softprops/action-gh-release@v1
       with:
         body: |
-          Mainline Turnip Vulkan V${{ inputs.version }}
-          Built from: https://github.com/whitebelyash/mesa-unified (turnip/gen8 branch). Took a while.  
-          
-          I didn't test this this much. Contact me on MojoLauncher.en (#offtopic-non-help, requires Community role) or EmuCore discord if there are any issues.
-
-          
-          >[!WARNING]
-          > Please don't report issues to Mesa, PLEASE
-                    
-          Supported GPUs:
-          * Adreno 8XX Family: 840, 830, 829, 825, 810
-          * Adreno 7XX Family: any GPU supported by the upstream Turnip + 710/720/722 (unstable, sysmem only). Thanks, https://github.com/Vauzi-17/710.  
-          (Upstream has more fixes, so check it too)
-          * Adreno 6XX Family: any GPU supported by the upstream Turnip
-          
-          
-          Notes:
-          * Disable DXVK_HUD if you see weird black artifacts
-          * Apparently there are swizzling glitches in Eden & maybe other emulators, try increasing render scale(?)
-          * Some games may require AMD/NVIDIA GPU to run and refuse to start on Qualcomm or block some features. I've included a patch to spoof as Steam Deck - use `TU_DEBUG=deck_emu`
-          * GMEM rendering produces glitchy picture on A830 (write page faults), disable it with `TU_DEBUG=sysmem`. It's pretty much useless for PC emulation anyway.
-
-        tag_name: tu_v${{ inputs.version }}
-        name: Mainline Turnip v${{ inputs.version }}
+          Turnip A8XX (whitebelyash turnip/gen8) with a linear swapchain fix for Android devices
+          where Mesa falls back to its generic gralloc backend (Qualcomm SnapAlloc / IMapper5,
+          Android 16+). Fixes striped or garbled emulator output on Adreno 8xx.
+          Test build, see patches_linear/.
+        tag_name: linear_v${{ inputs.version }}
+        name: Turnip linear swapchain fix v${{ inputs.version }}
         files: |
-           /tmp/mainline-turnip-V${{ inputs.version }}.zip
-           /tmp/mainline-turnip-sync-V${{ inputs.version }}.zip
+           /tmp/mainline-turnip-linear-V${{ inputs.version }}.zip

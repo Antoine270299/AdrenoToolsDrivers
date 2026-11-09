@@ -24,8 +24,7 @@ run_all(){
 	check_deps
 	prepare_workdir
 	# This has path slash in the branch name and thus needs some workarounds
-	build_lib_for_android turnip/gen8 turnip
-	build_lib_for_android turnip/gen8 turnip-sync apply
+	build_lib_for_android turnip/gen8 turnip-linear noapply linear
 	#build_lib_for_android gen8-yuck
 }
 
@@ -80,6 +79,12 @@ build_lib_for_android(){
 	if [[ "$3" == "apply" ]]; then
 		echo "Applying patches"
 		for patch in $base_workdir/patches/*; do
+			apply_patch $patch
+		done
+	fi
+	if [[ "$4" == "linear" ]]; then
+		echo "Applying linear swapchain patches"
+		for patch in $base_workdir/patches_linear/*; do
 			apply_patch $patch
 		done
 	fi
@@ -161,7 +166,7 @@ EOF
 	cat <<EOF >"meta.json"
 {
   "schemaVersion": 1,
-  "name": "Mainline Turnip v$BUILD_VERSION",
+  "name": "Turnip linear swapchain fix v$BUILD_VERSION",
   "description": "Upstream Turnip driver with some hacks. Built from $1 branch",
   "author": "whitebelyash",
   "packageVersion": "1",

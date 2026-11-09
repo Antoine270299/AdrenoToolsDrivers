@@ -1,0 +1,90 @@
+diff --git a/src/util/u_gralloc/u_gralloc_fallback.c b/src/util/u_gralloc/u_gralloc_fallback.c
+index bb6459c..4423fc3 100644
+--- a/src/util/u_gralloc/u_gralloc_fallback.c
++++ b/src/util/u_gralloc/u_gralloc_fallback.c
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include "u_gralloc_internal.h"
++#include <stdlib.h>
+ 
+ #include <hardware/gralloc.h>
+ 
+@@ -157,6 +158,12 @@ fallback_gralloc_get_buffer_info(struct u_gralloc *gralloc,
+    /* TODO: Actually find a way to detect a Qualcomm vendor allocated buffer */
+    /* This UBWC flag was introduced in a5xx. */
+    bool ubwc = hnd->handle->data[hnd->handle->numFds + 1] & 0x08000000;
++   /* MESA_ANDROID_FALLBACK_LINEAR=1: trust that buffers are linear (see
++    * vk_android_force_linear_swapchain), for allocators whose private handle
++    * layout does not match the legacy Qualcomm one this bit comes from.
++    */
++   if (getenv("MESA_ANDROID_FALLBACK_LINEAR"))
++      ubwc = false;
+    out->modifier = ubwc ? DRM_FORMAT_MOD_QCOM_COMPRESSED : DRM_FORMAT_MOD_LINEAR;
+ #endif
+ 
+diff --git a/src/vulkan/runtime/vk_android.c b/src/vulkan/runtime/vk_android.c
+index ca46ee1..5d9a3f5 100644
+--- a/src/vulkan/runtime/vk_android.c
++++ b/src/vulkan/runtime/vk_android.c
+@@ -41,6 +41,7 @@
+ #include "util/log.h"
+ #include "util/os_file.h"
+ #include "util/u_gralloc/u_gralloc.h"
++#include <stdlib.h>
+ 
+ #include <hardware/gralloc.h>
+ #include <hardware/hardware.h>
+@@ -457,12 +458,41 @@ setup_gralloc0_usage(VkFormat format, VkImageUsageFlags image_usage,
+    return VK_SUCCESS;
+ }
+ 
++
++/* When no real gralloc backend is available (U_GRALLOC_TYPE_FALLBACK, as with
++ * NDK builds on devices whose vendor gralloc only offers IMapper5, e.g. the
++ * Qualcomm SnapAlloc allocator on Android 16+), the layout of swapchain
++ * buffers cannot be queried: the fallback only guesses UBWC from a private
++ * handle bit and assumes linear otherwise, while the allocator may pick a UBWC
++ * or tiled layout. Ask for CPU-readable buffers then, which makes the
++ * allocator use a linear layout that matches that guess. Set
++ * MESA_ANDROID_NO_LINEAR_SWAPCHAIN=1 to turn this off.
++ */
++static bool
++vk_android_force_linear_swapchain(void)
++{
++   if (getenv("MESA_ANDROID_NO_LINEAR_SWAPCHAIN"))
++      return false;
++   struct u_gralloc *gralloc = vk_android_get_ugralloc();
++   return gralloc && u_gralloc_get_type(gralloc) == U_GRALLOC_TYPE_FALLBACK;
++}
++
++#ifndef GRALLOC_USAGE_SW_READ_RARELY
++#define GRALLOC_USAGE_SW_READ_RARELY 0x00000002U
++#endif
++#ifndef GRALLOC1_CONSUMER_USAGE_CPU_READ
++#define GRALLOC1_CONSUMER_USAGE_CPU_READ (1ULL << 1)
++#endif
++
+ VKAPI_ATTR VkResult VKAPI_CALL
+ vk_common_GetSwapchainGrallocUsageANDROID(VkDevice device, VkFormat format,
+                                           VkImageUsageFlags imageUsage,
+                                           int *grallocUsage)
+ {
+-   return setup_gralloc0_usage(format, imageUsage, grallocUsage);
++   VkResult result = setup_gralloc0_usage(format, imageUsage, grallocUsage);
++   if (result == VK_SUCCESS && vk_android_force_linear_swapchain())
++      *grallocUsage |= GRALLOC_USAGE_SW_READ_RARELY;
++   return result;
+ }
+ 
+ 
+@@ -662,6 +692,9 @@ vk_common_GetSwapchainGrallocUsage2ANDROID(
+    if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID)
+       *grallocProducerUsage |= vk_android_get_front_buffer_usage();
+ 
++   if (vk_android_force_linear_swapchain())
++      *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_CPU_READ;
++
+    return VK_SUCCESS;
+ }
+ 
