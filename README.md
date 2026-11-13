@@ -1,4 +1,10 @@
-# AdrenoTools Driver packages (Freedreno/Turnip CI)
+<p align="center"><img src="docs/hn_turnip.png" alt="HN Turnip" width="260"></p>
+
+# HN Turnip — AdrenoTools driver packages
+
+**HN Turnip** is Mesa Turnip for Adreno 8xx (whitebelyash's turnip/gen8 branch) with HexNostalgia's linear swapchain fix for Android 16+: on phones using Qualcomm's SnapAlloc allocator, emulators running Turnip no longer show red bands or striped output. Not an official Mesa or whitebelyash build. Releases: see the [Releases](../../releases) page.
+
+## Original README (whitebelyash)
 
 This repository holds scripts and workflow to autobuild new Turnip driver releases adapted for AdrenoTools usage.  
 These builds are based on https://github.com/whitebelyash/mesa-unified repository (turnip/gen8) to properly or improperly support some Adreno 8XX GPUs till the support reaches upstream.
