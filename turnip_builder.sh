@@ -166,9 +166,9 @@ EOF
 	cat <<EOF >"meta.json"
 {
   "schemaVersion": 1,
-  "name": "Turnip linear swapchain fix v$BUILD_VERSION",
-  "description": "Upstream Turnip driver with some hacks. Built from $1 branch",
-  "author": "whitebelyash",
+  "name": "HN Turnip v$BUILD_VERSION",
+  "description": "Mesa Turnip for Adreno 8xx (whitebelyash's $1 branch) with HexNostalgia's linear swapchain fix for Android 16+ (no more striped output). Not an official Mesa build.",
+  "author": "HexNostalgia, based on Mesa Turnip and whitebelyash",
   "packageVersion": "1",
   "vendor": "Mesa",
   "driverVersion": "Vulkan 1.4.335",

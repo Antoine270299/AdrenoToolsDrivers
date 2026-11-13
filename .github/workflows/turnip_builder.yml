@@ -40,11 +40,18 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         body: |
-          Turnip A8XX (whitebelyash turnip/gen8) with a linear swapchain fix for Android devices
-          where Mesa falls back to its generic gralloc backend (Qualcomm SnapAlloc / IMapper5,
-          Android 16+). Fixes striped or garbled emulator output on Adreno 8xx.
-          Test build, see patches_linear/.
-        tag_name: linear_v${{ inputs.version }}
-        name: Turnip linear swapchain fix v${{ inputs.version }}
+          **HN Turnip** — Mesa Turnip for Adreno 8xx (whitebelyash's turnip/gen8 branch) with
+          HexNostalgia's linear swapchain fix.
+
+          On Android 16+ with Qualcomm's SnapAlloc allocator, Mesa can't query how screen buffers
+          are laid out and falls back to its generic gralloc backend, which assumes a linear
+          layout while Android picks a compressed tiled one: emulators using Turnip show red bands
+          or striped output. In that fallback case this build asks for CPU-readable screen buffers,
+          which makes the layout linear. Patch: patches_linear/.
+
+          Not an official Mesa or whitebelyash build. Credits: the Mesa project (MIT license),
+          whitebelyash (Adreno 8xx support), ilhan-athn7 (builder scripts).
+        tag_name: hn_turnip_v${{ inputs.version }}
+        name: HN Turnip v${{ inputs.version }}
         files: |
            /tmp/mainline-turnip-linear-V${{ inputs.version }}.zip
